@@ -1,6 +1,11 @@
 //función que valida el parámetro de entrada.
 function validateParam(param){
-	
+	var response = false;
+	if(param !=null && param!=''&&param.length==5){
+		var regex = /^([A-Z, a-z,0-9])*$/
+		response= regex.test(param);
+	}
+	return response;
 }
 //función que valida si ya hay una registro de hora de entrada o de hora de salida
 function validateRecord(){
