@@ -12,6 +12,6 @@ router.post('/',(req,res, next)=>{
 	var params = req.body;
 	var isParam = params.is;
 	var dato = inFunctions.mainFunction();
-	res.send("El parámetro es "+isParam+ "el metodo funciona " +dato);
+	res.send("El parámetro es "+isParam+ " el metodo funciona " +dato);
 } );
 module.exports = router;
