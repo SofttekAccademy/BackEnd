@@ -17,10 +17,19 @@ function validateRecord(param){
 	return validateResponse;
 
 }
-//función que consulta los datos del académico genera el documento que se inserta en BD concatenando la hora de entrada o salida.
-//Hace uso de validateRecord para validar si es hora de entrada o salida
-function concatRecordData(){
-	
+//Generate the document ready to insert into DataBase.
+function concatRecordData(academicIS){
+	var concatResponse = null;
+	var d = new Date();
+	var hora = d.getHours()+":"+d.getMinutes();
+	var month = d.getMonth() +1;
+	var fecha = d.getDate()+"-"+month+"-"+d.getFullYear();
+	concatResponse={
+		IS:academicIS,
+		CHECK_IN_TIME:hora,
+		DATE: fecha
+	}
+	return concatResponse;
 }
 
 //Función que inserta el dato concatenado si es la hora de entrada
