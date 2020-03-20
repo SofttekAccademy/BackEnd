@@ -10,15 +10,73 @@ function validateParam(param){
 	}
 	return response;
 }
-//función que valida si ya hay una registro de hora de entrada o de hora de salida y llama a 
-//insertData o a updateData en caso que sea requerido
-//Regresa JSON con el nombre y apellidos del usuario, si hay error regresa null
+//Validate if the record is 
 function validateRecord(param){
-	var validateResponse;
-	//Ejemplo de respuesta
-	validateResponse={name:'Carlos', last_name1:'Pacheco', last_name2:'Chavez'};
+	var validateResponse = null;
+	var isValid = false;
+	var dayRegistry = getDayRegistry(param);
+	if(dayRegistry!=null&&dayRegistry!=''){
+		if(dayRegistry.CHECK_OUT_TIME=='00:00'){
+			isValid=updateData(dayRegistry);
+		}
+	}else{
+		isValid= insertData(param);
+	}
+	if(isValid){
+		var dataAcademic = getAcademicRegistry(param);
+		validateResponse={name:dataAcademic.NAME, last_name1:dataAcademic.LASTNAME};
+	}
+	
 	return validateResponse;
 
+}
+
+//Return the day registry filter by IS
+function getDayRegistry(academicIS){
+	var d = new Date();
+	var month = d.getMonth() +1;
+	var fecha = d.getDate()+"-"+month+"-"+d.getFullYear();
+	var db = dataBaseConection.dataBaseConect();
+
+	db.on('error', console.error.bind(console, 'connection error:'));
+	db.once('open', function() {
+		console.log("Connection Successful!");
+		// define Schema
+		var RegistrySchema = createSchema();
+		// compile schema to model
+		var Registry = mongoose.model('REGISTRY', RegistrySchema,'REGISTRY');
+		// documents array
+		var registry = {IS:academicIS, DATE:fecha };
+	
+		Registry.find(registry, function (err, result) {
+			console.log(result);
+			return result;
+			db.close();
+		});
+		
+	});
+}
+
+//Return the data associated at the IS parameter
+function getAcademicRegistry(academicIS){
+	var db = dataBaseConection.dataBaseConect();
+	db.on('error', console.error.bind(console, 'connection error:'));
+	db.once('open', function() {
+		console.log("Connection Successful!");
+		// define Schema
+		var AcademicSchema = createAcademicSchema();
+		// compile schema to model
+		var Academy = mongoose.model('academy_data', AcademicSchema,'academy_data');
+		// documents array
+		var registry = {IS: academicIS};
+	
+		Academy.find(registry, function (err, result) {
+				console.log(result);
+				return(result);
+				db.close();
+			});
+	
+	});
 }
 //Generate the document ready to insert into DataBase.
 function concatRecordData(academicIS){
@@ -30,6 +88,7 @@ function concatRecordData(academicIS){
 	concatResponse={
 		IS:academicIS,
 		CHECK_IN_TIME:hora,
+		CHECK_OUT_TIME:'00:00',
 		DATE: fecha
 	}
 	return concatResponse;
@@ -42,6 +101,16 @@ function createSchema(){
 		CHECK_IN_TIME: String,
 		CHECK_OUT_TIME: String,
 		DATE: String
+	});
+	return createdSchema;
+}
+
+//Generate the schema to Academic 
+function createAcademicSchema(){
+	var createdSchema = mongoose.Schema({
+		IS: String,
+		NAME: String,
+		LASTNAME: String
 	});
 	return createdSchema;
 }
@@ -62,7 +131,6 @@ function insertData(paramIS){
 	
 		Registry.collection.insert(registry, function (err, docs) {
 		if (err){ 
-			return console.error(err);
 			return false;
 		} else {
 			return true;
@@ -75,8 +143,8 @@ function insertData(paramIS){
 }
 
 //Función que actualiza el dato si es la hora de la salida
-function updateData(){
-
+function updateData(Registry){
+	return true;
 }
 
 //Main function process the parameter and return the response on JSON format
@@ -107,5 +175,8 @@ module.exports = {
 	"validateRecord":validateRecord,
 	"concatRecordData":concatRecordData,
 	"mainFunction":mainFunction,
-	"insertData" : insertData
+	"insertData" : insertData,
+	"getDayRegistry":getDayRegistry,
+	"getAcademicRegistry":getAcademicRegistry
+
 }
