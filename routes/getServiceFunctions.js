@@ -1,6 +1,8 @@
+var dataBaseConection = require("./databaseConection.js");
+var mongoose = require('mongoose');
 //función que valida el parámetro de entrada.
 function validateParam(param){
-	var RegExPattern = /^\d{1,2}\/\d{1,2}\/\d{2,4}$/;
+	var RegExPattern = /^\d{1,2}\-\d{1,2}\-\d{2,4}$/;
 	if ((param.match(RegExPattern)) && (param!='')) {
 		return true;
 	} else {
@@ -8,34 +10,42 @@ function validateParam(param){
 	}
 	
 }
+
+function createSchema(){
+	var createdSchema = mongoose.Schema({
+		IS: String,
+		CHECK_IN_TIME: String,
+		CHECK_OUT_TIME: String,
+		DATE: String
+	});
+	return createdSchema;
+}
+
 //Obtiene todos los registros del día seleccionado
 function getRecords(param){
-	
-	console.log(param);
+	var listResponse={};
+	var db = dataBaseConection.dataBaseConect();
 
-	var listaResponse=[{
-		name : "Juan",
-		lastname_1 : "Diaz",
-		lastname_2 : "Chavez",
-		arrival : "09:05",
-		leave : "18:06"
-	},
-	{
-		name : "Jorge",
-		lastname_1 : "Mondragon",
-		lastname_2 : "Vazques",
-		arrival : "09:00",
-		leave : "18:00"
-	},
-	{
-		name : "Magali",
-		lastname_1 : "Mendoza",
-		lastname_2 : "Lopez",
-		arrival : "08:30",
-		leave : "18:30"
-	}];
+	db.on('error', console.error.bind(console, 'connection error:'));
+	db.once('open', function() {
+	var RegistrySchema = createSchema();
+	var model = mongoose.model('REGISTRY', RegistrySchema,'REGISTRY');
+	console.log("Connection Successful!");
 
-return listaResponse;
+	model.find({
+	}, (err, docs) => {
+	   if(err){
+		   console.log(err)
+	   } else{
+		 if(docs.length != 0){
+			listResponse=docs;
+			console.log(docs);
+		 }
+	   }
+	});
+});
+ 	
+return listResponse;
 	
 }
 
