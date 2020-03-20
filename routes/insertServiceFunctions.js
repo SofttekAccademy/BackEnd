@@ -4,7 +4,7 @@ var mongoose = require('mongoose');
 //Function to validate the function parameter
 function validateParam(param){
 	var response = false;
-	if(param !=null && param!=''&&param.length==5){
+	if(param !=null && param!=''&&(param.length==5||param.length==4)){
 		var regex = /^([A-Z, a-z,0-9])*$/
 		response= regex.test(param);
 	}
@@ -143,7 +143,34 @@ function insertData(paramIS){
 }
 
 //Función que actualiza el dato si es la hora de la salida
-function updateData(Registry){
+function updateData(ParamIs){
+
+	var d = new Date();
+	var hora = d.getHours()+":"+d.getMinutes();
+
+	var db = dataBaseConection.dataBaseConect();
+	db.on('error', console.error.bind(console, 'connection error:'));
+ 
+	db.once('open', function() {
+		console.log("Connection Successful!");
+		// define Schema
+		var RegistrySchema = createSchema();
+		// compile schema to model
+		var Registry = mongoose.model('REGISTRY', RegistrySchema, 'REGISTRY');
+		// documents array
+		var query = {IS:ParamIs};
+	
+		Registry.collection.update(query, { $set: {CHECK_OUT_TIME: hora }},function (err, docs) {
+		if (err){ 
+			return false;
+		} else {
+			return true;
+		}
+		db.close();
+		});
+		
+	});
+
 	return true;
 }
 
@@ -177,6 +204,7 @@ module.exports = {
 	"mainFunction":mainFunction,
 	"insertData" : insertData,
 	"getDayRegistry":getDayRegistry,
-	"getAcademicRegistry":getAcademicRegistry
+	"getAcademicRegistry":getAcademicRegistry,
+	"updateData":updateData
 
 }
