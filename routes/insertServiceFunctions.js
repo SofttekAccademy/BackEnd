@@ -1,3 +1,6 @@
+var dataBaseConection = require("./databaseConection.js");
+var mongoose = require('mongoose');
+
 //Function to validate the function parameter
 function validateParam(param){
 	var response = false;
@@ -32,13 +35,46 @@ function concatRecordData(academicIS){
 	return concatResponse;
 }
 
-//Función que inserta el dato concatenado si es la hora de entrada
-//Hace uso de concatRecordData
-function insertData(){
+//Generate the schema to insert reistry on database
+function createSchema(){
+	var createdSchema = mongoose.Schema({
+		IS: String,
+		CHECK_IN_TIME: String,
+		CHECK_OUT_TIME: String,
+		DATE: String
+	});
+	return createdSchema;
+}
+
+//Insert the collection generate on concatRecordFunction
+function insertData(paramIS){
+	var db = dataBaseConection.dataBaseConect();
+	db.on('error', console.error.bind(console, 'connection error:'));
+ 
+	db.once('open', function() {
+		console.log("Connection Successful!");
+		// define Schema
+		var RegistrySchema = createSchema();
+		// compile schema to model
+		var Registry = mongoose.model('REGISTRY', RegistrySchema, 'REGISTRY');
+		// documents array
+		var registry = concatRecordData(paramIS);
+	
+		Registry.collection.insert(registry, function (err, docs) {
+		if (err){ 
+			return console.error(err);
+			return false;
+		} else {
+			return true;
+		}
+		db.close();
+		});
+		
+	});
 
 }
 
-//Función que actuaiza el dato si es la hora de la salida
+//Función que actualiza el dato si es la hora de la salida
 function updateData(){
 
 }
@@ -70,5 +106,6 @@ module.exports = {
     "validateParam": validateParam,
 	"validateRecord":validateRecord,
 	"concatRecordData":concatRecordData,
-	"mainFunction":mainFunction
+	"mainFunction":mainFunction,
+	"insertData" : insertData
 }
