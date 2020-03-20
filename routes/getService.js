@@ -7,12 +7,12 @@ app.use(bodyParser.urlencoded({extended:true}));
 
 
 
-router.post('/',(req,res, next)=>{
+router.get('/',(req,res, next)=>{
 	
 	var params = req.body;
 	var dateRegister = params.date;
-	var dato = inFunctions.mainFunction();
-	res.send("El parámetro es "+dateRegister+ "el metodo funciona " +dato);
+	var datoResponse = inFunctions.mainFunction(dateRegister);
+	res.send({datoResponse});
 } );
 
 module.exports = router;
