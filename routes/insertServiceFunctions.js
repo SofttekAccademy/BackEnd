@@ -11,23 +11,27 @@ function validateParam(param){
 	return response;
 }
 //Validate if the record is 
-function validateRecord(param){
+async function validateRecord(param){
 	var validateResponse = null;
 	var isValid = false;
-	var dayRegistry = getDayRegistry(param);
+	var dayRegistry =await getDayRegistry(param);
+	var outTime = dayRegistry[0]['CHECK_OUT_TIME'];
 	if(dayRegistry!=null&&dayRegistry!=''){
-		if(dayRegistry.CHECK_OUT_TIME=='00:00'){
-			isValid=updateData(dayRegistry);
+		if(outTime=='00:00'){
+			isValid= await updateData(param);
 		}
 	}else{
-		isValid= insertData(param);
+		isValid= await insertData(param);
 	}
 	if(isValid){
-		var dataAcademic = getAcademicRegistry(param);
+		var dataAcademic = await getAcademicRegistry(param);
 		validateResponse={name:dataAcademic.NAME, last_name1:dataAcademic.LASTNAME};
 	}
 	
-	return validateResponse;
+	return new Promise(resolve=>{
+		resolve(validateResponse);
+	});
+	
 
 }
 
@@ -35,25 +39,31 @@ function validateRecord(param){
 function getDayRegistry(academicIS){
 	var d = new Date();
 	var month = d.getMonth() +1;
-	var fecha = d.getDate()+"-"+month+"-"+d.getFullYear();
+	var fecha = d.getDate()+'-'+month+'-'+d.getFullYear();
 	var db = dataBaseConection.dataBaseConect();
 
-	db.on('error', console.error.bind(console, 'connection error:'));
-	db.once('open', function() {
-		console.log("Connection Successful!");
-		// define Schema
-		var RegistrySchema = createSchema();
-		// compile schema to model
+	db.on('error', console.error.bind(console, 'connection error:'));	
+	// define Schema
+	var RegistrySchema = createSchema();
+	// compile schema to model
+	var Registry;
+	try{
+		var Registry = mongoose.model('REGISTRY');
+	}catch(error){
 		var Registry = mongoose.model('REGISTRY', RegistrySchema,'REGISTRY');
-		// documents array
-		var registry = {IS:academicIS, DATE:fecha };
-	
-		Registry.find(registry, function (err, result) {
-			console.log(result);
-			return result;
-			db.close();
+	}
+	return new Promise(resolve=>{
+		db.once('open', function() {
+			console.log("Connection Successful!");
+			var registry = {IS:academicIS, DATE:fecha };
+			Registry.find(registry, function (err, result) {
+				db.close(function(){
+					console.log("Connection close!");
+				});
+				resolve(result);
+			});
+			
 		});
-		
 	});
 }
 
@@ -61,30 +71,38 @@ function getDayRegistry(academicIS){
 function getAcademicRegistry(academicIS){
 	var db = dataBaseConection.dataBaseConect();
 	db.on('error', console.error.bind(console, 'connection error:'));
-	db.once('open', function() {
-		console.log("Connection Successful!");
 		// define Schema
 		var AcademicSchema = createAcademicSchema();
 		// compile schema to model
-		var Academy = mongoose.model('academy_data', AcademicSchema,'academy_data');
+		var Academy;
+		try{
+			Academy = mongoose.model('academy_data');
+		}catch(err){
+			Academy = mongoose.model('academy_data', AcademicSchema,'academy_data');
+		}
 		// documents array
 		var registry = {IS: academicIS};
-	
-		Academy.find(registry, function (err, result) {
-				console.log(result);
-				return(result);
-				db.close();
-			});
-	
+		return new Promise(resolve=>{
+		db.once('open', function() {
+			console.log("Connection Successful!");
+			Academy.find(registry, function (err, result) {
+					console.log(result);
+					db.close(function(){
+						console.log("Connection close!");
+					});
+					resolve(result);
+				});
+		
+		});
 	});
 }
 //Generate the document ready to insert into DataBase.
 function concatRecordData(academicIS){
 	var concatResponse = null;
 	var d = new Date();
-	var hora = d.getHours()+":"+d.getMinutes();
+	var hora = d.getHours()+':'+d.getMinutes();
 	var month = d.getMonth() +1;
-	var fecha = d.getDate()+"-"+month+"-"+d.getFullYear();
+	var fecha = d.getDate()+'-'+month+'-'+d.getFullYear();
 	concatResponse={
 		IS:academicIS,
 		CHECK_IN_TIME:hora,
@@ -107,7 +125,8 @@ function createSchema(){
 
 //Generate the schema to Academic 
 function createAcademicSchema(){
-	var createdSchema = mongoose.Schema({
+	var Schema = mongoose.Schema;
+	var createdSchema = new Schema({
 		IS: String,
 		NAME: String,
 		LASTNAME: String
@@ -120,24 +139,33 @@ function insertData(paramIS){
 	var db = dataBaseConection.dataBaseConect();
 	db.on('error', console.error.bind(console, 'connection error:'));
  
-	db.once('open', function() {
-		console.log("Connection Successful!");
-		// define Schema
-		var RegistrySchema = createSchema();
+	var RegistrySchema = createSchema();
 		// compile schema to model
-		var Registry = mongoose.model('REGISTRY', RegistrySchema, 'REGISTRY');
+		// define Schema
+	var Registry;
+	try{
+		Registry = mongoose.model('REGISTRY');
+	}catch(error){
+		Registry = mongoose.model('REGISTRY', RegistrySchema,'REGISTRY');
+	}
 		// documents array
-		var registry = concatRecordData(paramIS);
-	
-		Registry.collection.insert(registry, function (err, docs) {
-		if (err){ 
-			return false;
-		} else {
-			return true;
-		}
-		db.close();
+	var registry = concatRecordData(paramIS);
+
+	return new Promise(resolve=>{
+		db.once('open', function() {
+			console.log("Connection Successful!");
+			Registry.collection.insert(registry, function (err, docs) {
+				db.close(function(){
+					console.log("Connection close!");
+				});
+				var respuesta=false;
+				if (err){ 
+				} else {
+					respuesta= true;
+				}
+				resolve(respuesta);
+			});
 		});
-		
 	});
 
 }
@@ -150,36 +178,46 @@ function updateData(ParamIs){
 
 	var db = dataBaseConection.dataBaseConect();
 	db.on('error', console.error.bind(console, 'connection error:'));
- 
+	var RegistrySchema = createSchema();
+	// compile schema to model
+	var Registry;
+	try{
+		var Registry = mongoose.model('REGISTRY');
+	}catch(err){
+		var Registry = mongoose.model('REGISTRY', RegistrySchema, 'REGISTRY');
+	}
+	
+	// documents array
+	var query = {IS:ParamIs};
 	db.once('open', function() {
 		console.log("Connection Successful!");
 		// define Schema
-		var RegistrySchema = createSchema();
-		// compile schema to model
-		var Registry = mongoose.model('REGISTRY', RegistrySchema, 'REGISTRY');
-		// documents array
-		var query = {IS:ParamIs};
-	
-		Registry.collection.update(query, { $set: {CHECK_OUT_TIME: hora }},function (err, docs) {
-		if (err){ 
-			return false;
-		} else {
-			return true;
-		}
-		db.close();
-		});
 		
+		return new Promise(resolve=>{
+			Registry.collection.update(query, { $set: {CHECK_OUT_TIME: hora }},function (err, docs) {
+			var response = false;
+				if (err){ 
+					return false;
+				} else {
+					response= true;
+				}
+			db.close(function(){
+				console.log("Connection close!");
+			});
+			resolve(response);
+			});
+		});
 	});
 
 	return true;
 }
 
 //Main function process the parameter and return the response on JSON format
-function mainFunction(param){
+async function mainFunction(param){
 	var response = null;
 	
 	if(validateParam(param)){
-		var validateResponse = validateRecord(param);
+		var validateResponse = await validateRecord(param);
 		if(validateResponse==null){
 			response={code: "x002", description:"No se ha podido insertar el registro" };
 		}else{
@@ -194,17 +232,12 @@ function mainFunction(param){
 	}else{
 		response={code: "x001", description:"IS invalido" };
 	}
-	return response;
+
+	return new Promise(resolve=>{
+		resolve(response);
+	});
 }
 
 module.exports = {
-    "validateParam": validateParam,
-	"validateRecord":validateRecord,
-	"concatRecordData":concatRecordData,
-	"mainFunction":mainFunction,
-	"insertData" : insertData,
-	"getDayRegistry":getDayRegistry,
-	"getAcademicRegistry":getAcademicRegistry,
-	"updateData":updateData
-
+	"mainFunction":mainFunction
 }
