@@ -10,22 +10,24 @@ function validateParam(param){
 	}
 	return response;
 }
-//Validate if the record is 
+//Validate if the record is ready to insert or update or is invalid
 async function validateRecord(param){
 	var validateResponse = null;
 	var isValid = false;
 	var dayRegistry =await getDayRegistry(param);
-	var outTime = dayRegistry[0]['CHECK_OUT_TIME'];
+	var dataAcademic = await getAcademicRegistry(param);
 	if(dayRegistry!=null&&dayRegistry!=''){
+		var outTime = dayRegistry[0]['CHECK_OUT_TIME'];
 		if(outTime=='00:00'){
 			isValid= await updateData(param);
 		}
 	}else{
-		isValid= await insertData(param);
+		if(dataAcademic!= null &&dataAcademic!=''){
+			isValid= await insertData(param);
+		}
 	}
 	if(isValid){
-		var dataAcademic = await getAcademicRegistry(param);
-		validateResponse={name:dataAcademic.NAME, last_name1:dataAcademic.LASTNAME};
+		validateResponse={name:dataAcademic[0]['NAME'], last_name1:dataAcademic[0]['LASTNAME']};
 	}
 	
 	return new Promise(resolve=>{
@@ -170,7 +172,7 @@ function insertData(paramIS){
 
 }
 
-//Función que actualiza el dato si es la hora de la salida
+//Update the record 
 function updateData(ParamIs){
 
 	var d = new Date();
