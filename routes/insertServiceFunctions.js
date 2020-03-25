@@ -177,20 +177,22 @@ function updateData(ParamIs){
 
 	var d = new Date();
 	var hora = d.getHours()+":"+d.getMinutes();
-
+	var month = d.getMonth() +1;
+	var fecha = d.getDate()+'-'+month+'-'+d.getFullYear();
 	var db = dataBaseConection.dataBaseConect();
 	db.on('error', console.error.bind(console, 'connection error:'));
 	var RegistrySchema = createSchema();
 	// compile schema to model
 	var Registry;
 	try{
-		var Registry = mongoose.model('REGISTRY');
-	}catch(err){
 		var Registry = mongoose.model('REGISTRY', RegistrySchema, 'REGISTRY');
+		
+	}catch(err){
+		var Registry = mongoose.model('REGISTRY');
 	}
 	
 	// documents array
-	var query = {IS:ParamIs};
+	var query = {IS:ParamIs, DATE:fecha};
 	db.once('open', function() {
 		console.log("Connection Successful!");
 		// define Schema
